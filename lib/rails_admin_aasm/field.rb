@@ -94,6 +94,10 @@ module RailsAdmin
             :form_state
           end
 
+          register_instance_option :read_only do
+            false
+          end
+
           register_instance_option :allowed_methods do
             [method_name, (method_name.to_s + '_event').to_sym]
           end
