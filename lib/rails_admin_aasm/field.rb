@@ -22,13 +22,16 @@ module RailsAdmin
 
             bindings[:object].aasm.events.each do |event|
               next unless event.may_fire? bindings[:object]
-              next unless v.authorized?(:state, @abstract_model, bindings[:object]) && (v.authorized?(:all_events, @abstract_model, bindings[:object]) || v.authorized?(event.name, @abstract_model, bindings[:object]))
+              unless bindings[:controller].try(:authorization_adapter).nil?
+                adapter = bindings[:controller].authorization_adapter
+                next unless (adapter.authorized?(:state, @abstract_model, bindings[:object]) && (adapter.authorized?(:all_events, @abstract_model, bindings[:object]) || adapter.authorized?(event, @abstract_model, bindings[:object])))
+              end
               event_class = @state_machine_options.event(event.name)
               ret << bindings[:view].link_to(
                 event.name.to_s.capitalize,
                 state_path(model_name: @abstract_model, id: bindings[:object].id, event: event.name, attr: name),
-                method: :post, 
-                class: "btn btn-mini #{event_class}",
+                method: :post,
+                class: "btn btn-mini btn-xs #{event_class}",
                 style: 'margin-bottom: 5px;'
               )
             end
@@ -54,7 +57,10 @@ module RailsAdmin
             empty = true
             bindings[:object].aasm.events.each do |event|
               next unless event.may_fire? bindings[:object]
-              next unless v.authorized?(:state, @abstract_model, bindings[:object]) && (v.authorized?(:all_events, @abstract_model, bindings[:object]) || v.authorized?(event.name, @abstract_model, bindings[:object]))
+              unless bindings[:controller].try(:authorization_adapter).nil?
+                adapter = bindings[:controller].authorization_adapter
+                next unless (adapter.authorized?(:state, @abstract_model, bindings[:object]) && (adapter.authorized?(:all_events, @abstract_model, bindings[:object]) || adapter.authorized?(event, @abstract_model, bindings[:object])))
+              end
               empty = false
               event_class = @state_machine_options.event(event.name)
               ret << bindings[:view].link_to(
@@ -62,7 +68,7 @@ module RailsAdmin
                 '#',
                 'data-attr' => name,
                 'data-event' => event.name,
-                class: "state-btn btn btn-mini #{event_class}",
+                class: "state-btn btn btn-mini btn-xs #{event_class}",
                 style: 'margin-bottom: 5px;'
               )
             end
@@ -72,13 +78,13 @@ module RailsAdmin
                 '#',
                 'data-attr' => name,
                 'data-event' => '',
-                class: "state-btn btn btn-mini active",
+                class: "state-btn btn btn-default btn-mini btn-xs active",
                 style: 'margin-bottom: 5px;'
               )
             end
             ('<div style="white-space: normal;">' + ret.join(' ') + '</div>').html_safe
           end
-          
+
           register_instance_option :export_value do
             state = bindings[:object].send(name)
             bindings[:object].aasm.human_state
